@@ -1,0 +1,79 @@
+package com.codexp.solutions.shared.infrastructure.security;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.codexp.solutions.shared.domain.model.valueobjects.JwtPrincipal;
+import com.codexp.solutions.shared.domain.model.valueobjects.UserRole;
+
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+@Component
+public class JwtAuthFilter extends OncePerRequestFilter {
+
+    private final JwtUtils jwtUtils;
+
+    public JwtAuthFilter(JwtUtils jwtUtils) {
+        this.jwtUtils = jwtUtils;
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
+
+        final String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        final String jwt = authHeader.substring(7);
+
+        if (!jwtUtils.isTokenValid(jwt)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
+
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            Claims claims = jwtUtils.extractAllClaims(jwt);
+
+            String userId   = claims.getSubject();
+            String nickname = claims.get("nickname", String.class);
+            String email    = claims.get("email", String.class);
+            String role     = claims.get("role", String.class);
+
+            List<GrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + role)
+            );
+
+            JwtPrincipal principal = new JwtPrincipal(userId, nickname, email, UserRole.valueOf(role));
+
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(
+                            principal,
+                            null,
+                            authorities
+                    );
+
+            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+        }
+
+        filterChain.doFilter(request, response);
+    }
+}

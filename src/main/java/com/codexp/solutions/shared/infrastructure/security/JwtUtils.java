@@ -1,11 +1,17 @@
 package com.codexp.solutions.shared.infrastructure.security;
 
+import com.codexp.solutions.shared.domain.model.valueobjects.JwtPrincipal;
+import com.codexp.solutions.shared.domain.model.valueobjects.NickName;
+import com.codexp.solutions.shared.domain.model.valueobjects.UserEmail;
+import com.codexp.solutions.shared.domain.model.valueobjects.UserId;
 import com.codexp.solutions.shared.domain.model.valueobjects.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -17,7 +23,11 @@ public class JwtUtils {
   private String jwtSecret;
 
   private SecretKey getSigningKey() {
-    return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+    try {
+      return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+    } catch (IllegalArgumentException ignored) {
+      return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    }
   }
 
   public Claims extractAllClaims(String token) {
@@ -41,7 +51,27 @@ public class JwtUtils {
   }
 
   public UserRole extractRole(String token) {
-    return UserRole.valueOf(extractAllClaims(token).get("role", String.class));
+    return UserRole.fromClaim(extractAllClaims(token).get("role", String.class));
+  }
+
+  public Optional<JwtPrincipal> extractPrincipal(String token) {
+    try {
+      Claims claims = extractAllClaims(token);
+
+      String userId = claims.getSubject();
+      String nickname = claims.get("nickname", String.class);
+      String email = claims.get("email", String.class);
+      UserRole role = UserRole.fromClaim(claims.get("role", String.class));
+
+      return Optional.of(new JwtPrincipal(
+          UserId.fromString(userId),
+          NickName.fromString(nickname),
+          UserEmail.fromString(email),
+          role
+      ));
+    } catch (JwtException | IllegalArgumentException e) {
+      return Optional.empty();
+    }
   }
 
   public boolean isTokenValid(String token) {

@@ -13,10 +13,12 @@ import com.codexp.solutions.shared.domain.model.valueobjects.UserRole;
 import com.codexp.solutions.solutions.domain.exceptions.ChallengeContextFetchException;
 import com.codexp.solutions.solutions.domain.exceptions.SolutionNotFoundException;
 import com.codexp.solutions.solutions.domain.exceptions.SolutionOwnershipException;
+import com.codexp.solutions.solutions.domain.model.Attempt;
 import com.codexp.solutions.solutions.domain.model.commands.CreateSolutionFromRequestedEventCommand;
 import com.codexp.solutions.solutions.domain.model.commands.SubmitSolutionCommand;
 import com.codexp.solutions.solutions.domain.model.commands.UpdateSolutionCodeCommand;
 import com.codexp.solutions.solutions.domain.model.events.SolutionExecutionRequestedEvent;
+import com.codexp.solutions.solutions.domain.model.valueobjects.AttemptId;
 import com.codexp.solutions.solutions.domain.model.valueobjects.AttemptWindowMinutes;
 import com.codexp.solutions.solutions.domain.model.valueobjects.AttemptsLimit;
 import com.codexp.solutions.solutions.domain.model.valueobjects.AuthorId;
@@ -24,6 +26,7 @@ import com.codexp.solutions.solutions.domain.model.valueobjects.SolutionId;
 import com.codexp.solutions.solutions.domain.services.ChallengeContextGateway;
 import com.codexp.solutions.solutions.domain.services.SolutionCommandService;
 import com.codexp.solutions.solutions.domain.services.SolutionExecutionEventPublisher;
+import com.codexp.solutions.solutions.infrastructure.persistence.jpa.repositories.AttemptRepository;
 import com.codexp.solutions.solutions.infrastructure.persistence.jpa.repositories.SolutionRepository;
 
 import com.codexp.solutions.solutions.domain.model.Solution;
@@ -32,6 +35,7 @@ import com.codexp.solutions.solutions.domain.model.Solution;
 public class SolutionCommandServiceImpl implements SolutionCommandService {
 
     private final SolutionRepository solutionRepository;
+    private final AttemptRepository attemptRepository;
     private final ChallengeContextGateway challengeContextGateway;
     private final SolutionExecutionEventPublisher solutionExecutionEventPublisher;
 
@@ -43,10 +47,12 @@ public class SolutionCommandServiceImpl implements SolutionCommandService {
 
     public SolutionCommandServiceImpl(
         SolutionRepository solutionRepository,
+        AttemptRepository attemptRepository,
         ChallengeContextGateway challengeContextGateway,
         SolutionExecutionEventPublisher solutionExecutionEventPublisher
     ) {
         this.solutionRepository = solutionRepository;
+        this.attemptRepository = attemptRepository;
         this.challengeContextGateway = challengeContextGateway;
         this.solutionExecutionEventPublisher = solutionExecutionEventPublisher;
     }
@@ -74,10 +80,10 @@ public class SolutionCommandServiceImpl implements SolutionCommandService {
     @Override
     @Transactional
     public Solution handle(UpdateSolutionCodeCommand command) {
-        ensureStudent(command.requesterRole());
+        ensureAllowedRole(command.requesterRole());
 
         Solution solution = solutionRepository.findById(command.solutionId()).orElseThrow(SolutionNotFoundException::new);
-        assertOwnership(solution, command.requesterId());
+        assertOwnershipUnlessAdmin(solution, command.requesterId(), command.requesterRole());
 
         solution.updateCode(command.code());
         return solutionRepository.save(solution);
@@ -86,10 +92,10 @@ public class SolutionCommandServiceImpl implements SolutionCommandService {
     @Override
     @Transactional
     public Solution handle(SubmitSolutionCommand command) {
-        ensureStudent(command.requesterRole());
+        ensureAllowedRole(command.requesterRole());
 
         Solution solution = solutionRepository.findById(command.solutionId()).orElseThrow(SolutionNotFoundException::new);
-        assertOwnership(solution, command.requesterId());
+        assertOwnershipUnlessAdmin(solution, command.requesterId(), command.requesterRole());
 
         var submitContext = challengeContextGateway.fetchSubmitContext(solution.getChallengeId(), solution.getLanguage());
         if (submitContext == null || submitContext.testCases() == null || submitContext.testCases().isEmpty()) {
@@ -104,6 +110,9 @@ public class SolutionCommandServiceImpl implements SolutionCommandService {
 
         solution.submit(Instant.now(), AttemptWindowMinutes.fromInt(attemptResetWindowMinutes));
         Solution saved = solutionRepository.save(solution);
+
+        Attempt queuedAttempt = Attempt.createQueued(AttemptId.generate(), saved.getId());
+        attemptRepository.save(queuedAttempt);
 
         var eventTestCases = new ArrayList<SolutionExecutionRequestedEvent.TestCaseData>();
         for (var testCase : submitContext.testCases()) {
@@ -152,15 +161,19 @@ public class SolutionCommandServiceImpl implements SolutionCommandService {
         }
     }
 
-    private void ensureStudent(UserRole role) {
-        if (!UserRole.ROLE_STUDENT.equals(role)) {
-            throw new UnauthorizedActionException("Only students can manage solutions");
+    private void ensureAllowedRole(UserRole role) {
+        if (!UserRole.ROLE_STUDENT.equals(role) && !UserRole.ROLE_ADMIN.equals(role)) {
+            throw new UnauthorizedActionException("Only students or admins can manage solutions");
         }
     }
 
-    private void assertOwnership(Solution solution, AuthorId requesterId) {
-        if (!solution.isOwnedBy(requesterId)) {
-            throw new SolutionOwnershipException("Only the solution owner can modify or submit this solution.");
+    private void assertOwnershipUnlessAdmin(
+        Solution solution,
+        AuthorId requesterId,
+        UserRole requesterRole
+    ) {
+        if (!UserRole.ROLE_ADMIN.equals(requesterRole) && !solution.isOwnedBy(requesterId)) {
+            throw new SolutionOwnershipException("Only the solution owner or admin can modify or submit this solution.");
         }
     }
 }

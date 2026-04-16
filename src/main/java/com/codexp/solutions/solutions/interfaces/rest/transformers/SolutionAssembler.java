@@ -1,15 +1,22 @@
 package com.codexp.solutions.solutions.interfaces.rest.transformers;
 
+import java.util.Collections;
 import java.util.List;
 
+import com.codexp.solutions.solutions.domain.model.Attempt;
 import com.codexp.solutions.solutions.domain.model.Solution;
 import com.codexp.solutions.solutions.interfaces.rest.responses.SolutionResponse;
 import com.codexp.solutions.solutions.interfaces.rest.responses.SubmitSolutionResponse;
 
 public class SolutionAssembler {
 
-    public static SolutionResponse toResponse(Solution solution) {
-        List<String> failedTestIds = solution.failedTestIdsView();
+    public static SolutionResponse toResponse(Solution solution, Attempt latestAttempt) {
+        Long executionTimeMs = latestAttempt != null ? latestAttempt.getExecutionTimeMs() : null;
+        String errorDetails = latestAttempt != null ? latestAttempt.getErrorDetails() : null;
+        List<String> failedTestIds = latestAttempt != null
+            ? latestAttempt.failedTestIdsView()
+            : Collections.emptyList();
+
         return new SolutionResponse(
             solution.getId().toString(),
             solution.getChallengeId().toString(),
@@ -21,8 +28,8 @@ public class SolutionAssembler {
             solution.getCurrentAttempts().value(),
             solution.remainingAttempts(),
             solution.getAttemptsResetAt(),
-            solution.getExecutionTimeMs(),
-            solution.getErrorDetails(),
+            executionTimeMs,
+            errorDetails,
             failedTestIds,
             solution.getUpdatedAt(),
             solution.getCreatedAt()

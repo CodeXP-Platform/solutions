@@ -12,23 +12,15 @@ import com.codexp.solutions.solutions.domain.model.valueobjects.SolutionId;
 import com.codexp.solutions.solutions.domain.model.valueobjects.SolutionStatus;
 import com.codexp.solutions.solutions.domain.model.valueobjects.TemplateLanguage;
 import jakarta.persistence.AttributeOverride;
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -109,20 +101,6 @@ public class Solution extends AbstractEntity {
     @Column(name = "attempts_reset_at")
     private Instant attemptsResetAt;
 
-    @Column(name = "execution_time_ms")
-    private Long executionTimeMs;
-
-    @Column(name = "error_details", columnDefinition = "TEXT")
-    private String errorDetails;
-
-    @ElementCollection
-    @CollectionTable(
-        name = "solution_failed_tests",
-        joinColumns = @JoinColumn(name = "solution_id")
-    )
-    @Column(name = "test_id", nullable = false)
-    private List<String> failedTestIds = new ArrayList<>();
-
     public static Solution create(
         SolutionId id,
         ChallengeId challengeId,
@@ -141,9 +119,6 @@ public class Solution extends AbstractEntity {
         solution.maxAttempts = maxAttempts;
         solution.currentAttempts = AttemptsCount.zero();
         solution.attemptsResetAt = null;
-        solution.executionTimeMs = null;
-        solution.errorDetails = null;
-        solution.failedTestIds = new ArrayList<>();
         return solution;
     }
 
@@ -186,34 +161,13 @@ public class Solution extends AbstractEntity {
         }
 
         status = SolutionStatus.QUEUED;
-        errorDetails = null;
-        failedTestIds.clear();
-        executionTimeMs = null;
     }
 
     public void markExecuting() {
         status = SolutionStatus.EXECUTING;
     }
 
-    public void markCompleted(
-        boolean isSuccessful,
-        Long totalExecutionTimeMs,
-        String globalError,
-        List<String> failedTestIds
-    ) {
+    public void markCompleted(boolean isSuccessful) {
         status = isSuccessful ? SolutionStatus.PASSED : SolutionStatus.FAILED;
-        executionTimeMs = totalExecutionTimeMs;
-        errorDetails = globalError;
-        this.failedTestIds =
-            failedTestIds == null
-                ? new ArrayList<>()
-                : failedTestIds
-                      .stream()
-                      .distinct()
-                      .collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    public List<String> failedTestIdsView() {
-        return Collections.unmodifiableList(failedTestIds);
     }
 }

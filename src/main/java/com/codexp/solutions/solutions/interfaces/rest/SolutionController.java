@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.codexp.solutions.shared.application.UserContext;
+import com.codexp.solutions.solutions.domain.model.queries.GetLatestAttemptBySolutionIdQuery;
+import com.codexp.solutions.solutions.domain.services.AttemptQueryService;
 import com.codexp.solutions.solutions.domain.services.SolutionCommandService;
 import com.codexp.solutions.solutions.domain.services.SolutionQueryService;
 import com.codexp.solutions.solutions.interfaces.rest.requests.UpdateSolutionCodeRequest;
@@ -26,25 +28,36 @@ public class SolutionController {
 
     private final SolutionCommandService solutionCommandService;
     private final SolutionQueryService solutionQueryService;
+    private final AttemptQueryService attemptQueryService;
     private final UserContext userContext;
 
     public SolutionController(
         SolutionCommandService solutionCommandService,
         SolutionQueryService solutionQueryService,
+        AttemptQueryService attemptQueryService,
         UserContext userContext
     ) {
         this.solutionCommandService = solutionCommandService;
         this.solutionQueryService = solutionQueryService;
+        this.attemptQueryService = attemptQueryService;
         this.userContext = userContext;
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<SolutionResponse> getById(@PathVariable String id) {
-        userContext.getPrincipal();
+        var jwt = userContext.getPrincipal();
 
-        var query = SolutionQueryAssembler.toGetSolutionByIdQuery(id);
+        var query = SolutionQueryAssembler.toGetSolutionByIdQuery(
+            id,
+            jwt.userId().value(),
+            jwt.role()
+        );
         var solution = solutionQueryService.handle(query);
-        return ResponseEntity.ok(SolutionAssembler.toResponse(solution));
+        var latestAttempt = attemptQueryService
+            .handle(new GetLatestAttemptBySolutionIdQuery(solution.getId()))
+            .orElse(null);
+
+        return ResponseEntity.ok(SolutionAssembler.toResponse(solution, latestAttempt));
     }
 
     @PutMapping("/{id}")
@@ -62,7 +75,11 @@ public class SolutionController {
         );
 
         var solution = solutionCommandService.handle(command);
-        return ResponseEntity.ok(SolutionAssembler.toResponse(solution));
+        var latestAttempt = attemptQueryService
+            .handle(new GetLatestAttemptBySolutionIdQuery(solution.getId()))
+            .orElse(null);
+
+        return ResponseEntity.ok(SolutionAssembler.toResponse(solution, latestAttempt));
     }
 
     @PostMapping("/{id}/submit")

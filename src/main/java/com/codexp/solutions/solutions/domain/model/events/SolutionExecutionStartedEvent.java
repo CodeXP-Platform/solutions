@@ -8,5 +8,37 @@ public record SolutionExecutionStartedEvent(
     Instant timestamp,
     Data data
 ) {
-    public record Data(String solutionId) {}
+    public String eventId() {
+        return eventId;
+    }
+
+    public String eventType() {
+        return eventType;
+    }
+
+    public Instant timestamp() {
+        return timestamp;
+    }
+
+    public Data data() {
+        return data;
+    }
+
+    public record Data(
+        String solutionId,
+        String executionId,
+        Instant startedAt
+    ) {
+        public String solutionId() {
+            return solutionId;
+        }
+
+        public String executionId() {
+            return executionId;
+        }
+
+        public Instant startedAt() {
+            return startedAt;
+        }
+    }
 }

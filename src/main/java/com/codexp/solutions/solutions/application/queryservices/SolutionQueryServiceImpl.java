@@ -7,6 +7,7 @@ import com.codexp.solutions.shared.domain.model.valueobjects.UserRole;
 import com.codexp.solutions.solutions.domain.exceptions.SolutionNotFoundException;
 import com.codexp.solutions.solutions.domain.exceptions.SolutionOwnershipException;
 import com.codexp.solutions.solutions.domain.model.Solution;
+import com.codexp.solutions.solutions.domain.model.queries.GetSolutionByChallengeQuery;
 import com.codexp.solutions.solutions.domain.model.queries.GetSolutionByIdQuery;
 import com.codexp.solutions.solutions.domain.services.SolutionQueryService;
 import com.codexp.solutions.solutions.infrastructure.persistence.jpa.repositories.SolutionRepository;
@@ -31,6 +32,19 @@ public class SolutionQueryServiceImpl implements SolutionQueryService {
         }
 
         return solution;
+    }
+
+    @Override
+    public Solution handle(GetSolutionByChallengeQuery query) {
+        ensureAllowedRole(query.requesterRole());
+
+        return solutionRepository
+            .findByChallengeIdAndAuthorIdAndLanguage(
+                query.challengeId(),
+                query.requesterId(),
+                query.language()
+            )
+            .orElseThrow(SolutionNotFoundException::new);
     }
 
     private void ensureAllowedRole(UserRole role) {

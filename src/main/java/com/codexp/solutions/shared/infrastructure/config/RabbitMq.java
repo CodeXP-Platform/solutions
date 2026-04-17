@@ -33,13 +33,6 @@ public class RabbitMq {
     }
 
     @Bean
-    public Queue solutionRequestedQueue(
-            @Value("${app.messaging.solutions.queues.solution-requested}") String queueName
-    ) {
-        return QueueBuilder.durable(queueName).build();
-    }
-
-    @Bean
     public Queue solutionExecutionStartedQueue(
             @Value("${app.messaging.solutions.queues.execution-started}") String queueName
     ) {
@@ -54,12 +47,10 @@ public class RabbitMq {
     }
 
     @Bean
-    public Binding solutionRequestedBinding(
-            Queue solutionRequestedQueue,
-            TopicExchange challengesExchange,
-            @Value("${app.messaging.solutions.routing-keys.solution-requested}") String routingKey
+    public Queue solutionRequestedQueue(
+            @Value("${app.messaging.solutions.queues.solution-requested}") String queueName
     ) {
-        return BindingBuilder.bind(solutionRequestedQueue).to(challengesExchange).with(routingKey);
+        return QueueBuilder.durable(queueName).build();
     }
 
     @Bean
@@ -78,6 +69,15 @@ public class RabbitMq {
             @Value("${app.messaging.solutions.routing-keys.execution-completed}") String routingKey
     ) {
         return BindingBuilder.bind(solutionExecutionCompletedQueue).to(codeExecutionExchange).with(routingKey);
+    }
+
+    @Bean
+    public Binding solutionRequestedBinding(
+            Queue solutionRequestedQueue,
+            TopicExchange challengesExchange,
+            @Value("${app.messaging.solutions.routing-keys.solution-requested}") String routingKey
+    ) {
+        return BindingBuilder.bind(solutionRequestedQueue).to(challengesExchange).with(routingKey);
     }
 
     @Bean

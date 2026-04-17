@@ -21,6 +21,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -29,8 +30,8 @@ import lombok.NoArgsConstructor;
     name = "solutions",
     uniqueConstraints = {
         @UniqueConstraint(
-            name = "uk_solution_challenge_author",
-            columnNames = { "challenge_id", "author_id" }
+            name = "uk_solution_challenge_author_language",
+            columnNames = { "challenge_id", "author_id", "language" }
         ),
     }
 )
@@ -120,6 +121,42 @@ public class Solution extends AbstractEntity {
         solution.currentAttempts = AttemptsCount.zero();
         solution.attemptsResetAt = null;
         return solution;
+    }
+
+    public SolutionId getId() {
+        return id;
+    }
+
+    public ChallengeId getChallengeId() {
+        return challengeId;
+    }
+
+    public AuthorId getAuthorId() {
+        return authorId;
+    }
+
+    public TemplateLanguage getLanguage() {
+        return language;
+    }
+
+    public SolutionCode getCode() {
+        return code;
+    }
+
+    public SolutionStatus getStatus() {
+        return status;
+    }
+
+    public AttemptsLimit getMaxAttempts() {
+        return maxAttempts;
+    }
+
+    public AttemptsCount getCurrentAttempts() {
+        return currentAttempts;
+    }
+
+    public Instant getAttemptsResetAt() {
+        return attemptsResetAt;
     }
 
     public void updateCode(SolutionCode code) {

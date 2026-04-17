@@ -97,6 +97,18 @@ public class Attempt extends AbstractEntity {
                       .collect(Collectors.toCollection(ArrayList::new));
     }
 
+    public AttemptStatus getStatus() {
+        return status;
+    }
+
+    public Long getExecutionTimeMs() {
+        return executionTimeMs;
+    }
+
+    public String getErrorDetails() {
+        return errorDetails;
+    }
+
     public List<String> failedTestIdsView() {
         return Collections.unmodifiableList(failedTestIds);
     }

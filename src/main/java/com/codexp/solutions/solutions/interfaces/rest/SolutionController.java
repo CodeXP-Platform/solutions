@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,11 +16,14 @@ import com.codexp.solutions.solutions.domain.model.queries.GetLatestAttemptBySol
 import com.codexp.solutions.solutions.domain.services.AttemptQueryService;
 import com.codexp.solutions.solutions.domain.services.SolutionCommandService;
 import com.codexp.solutions.solutions.domain.services.SolutionQueryService;
+import com.codexp.solutions.solutions.interfaces.rest.requests.CreateSolutionRequest;
 import com.codexp.solutions.solutions.interfaces.rest.requests.UpdateSolutionCodeRequest;
 import com.codexp.solutions.solutions.interfaces.rest.responses.SolutionResponse;
 import com.codexp.solutions.solutions.interfaces.rest.responses.SubmitSolutionResponse;
 import com.codexp.solutions.solutions.interfaces.rest.transformers.SolutionAssembler;
 import com.codexp.solutions.solutions.interfaces.rest.transformers.SolutionCommandAssembler;
+import com.codexp.solutions.solutions.interfaces.rest.transformers.SolutionChallengeQueryAssembler;
+import com.codexp.solutions.solutions.interfaces.rest.transformers.SolutionCreateCommandAssembler;
 import com.codexp.solutions.solutions.interfaces.rest.transformers.SolutionQueryAssembler;
 
 @RestController
@@ -41,6 +45,33 @@ public class SolutionController {
         this.solutionQueryService = solutionQueryService;
         this.attemptQueryService = attemptQueryService;
         this.userContext = userContext;
+    }
+
+    @PostMapping
+    public ResponseEntity<SolutionResponse> create(
+        @RequestBody CreateSolutionRequest request
+    ) {
+        var jwt = userContext.getPrincipal();
+
+        var command = SolutionCreateCommandAssembler.toCreateSolutionCommand(
+            request,
+            jwt.userId().value(),
+            jwt.role()
+        );
+        solutionCommandService.handle(command);
+
+        var query = SolutionChallengeQueryAssembler.toGetSolutionByChallengeQuery(
+            request.challengeId(),
+            jwt.userId().value(),
+            jwt.role(),
+            request.language()
+        );
+        var solution = solutionQueryService.handle(query);
+        var latestAttempt = attemptQueryService
+            .handle(new GetLatestAttemptBySolutionIdQuery(solution.getId()))
+            .orElse(null);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(SolutionAssembler.toResponse(solution, latestAttempt));
     }
 
     @GetMapping("/{id}")

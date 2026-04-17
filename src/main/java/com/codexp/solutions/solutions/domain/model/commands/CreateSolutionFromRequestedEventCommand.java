@@ -10,4 +10,20 @@ public record CreateSolutionFromRequestedEventCommand(
     AuthorId authorId,
     TemplateLanguage language,
     SolutionCode templateCode
-) {}
+) {
+    public ChallengeId challengeId() {
+        return challengeId;
+    }
+
+    public AuthorId authorId() {
+        return authorId;
+    }
+
+    public TemplateLanguage language() {
+        return language;
+    }
+
+    public SolutionCode templateCode() {
+        return templateCode;
+    }
+}

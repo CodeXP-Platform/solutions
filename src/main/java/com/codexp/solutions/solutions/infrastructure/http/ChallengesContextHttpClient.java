@@ -51,7 +51,22 @@ public class ChallengesContextHttpClient implements ChallengeContextGateway {
                 .retrieve()
                 .body(SubmitContextResponse.class);
 
-            if (response == null || response.entryFunctionName() == null || response.entryFunctionName().isBlank()) {
+            if (
+                response == null ||
+                response.templateCode() == null ||
+                response.templateCode().isBlank()
+            ) {
+                throw new ChallengeContextFetchException("Challenge context response is missing templateCode.");
+            }
+
+            if (
+                response.language() == null ||
+                !response.language().equalsIgnoreCase(language.value())
+            ) {
+                throw new ChallengeContextFetchException("Challenge context response language does not match requested language.");
+            }
+
+            if (response.entryFunctionName() == null || response.entryFunctionName().isBlank()) {
                 throw new ChallengeContextFetchException("Challenge context response is missing entryFunctionName.");
             }
 
@@ -68,13 +83,20 @@ public class ChallengesContextHttpClient implements ChallengeContextGateway {
                 ))
                 .toList();
 
-            return new SubmitChallengeContext(response.entryFunctionName(), mapped);
+            return new SubmitChallengeContext(
+                response.templateCode(),
+                response.language(),
+                response.entryFunctionName(),
+                mapped
+            );
         } catch (RestClientException ex) {
             throw new ChallengeContextFetchException("Failed to fetch challenge submit context: " + ex.getMessage());
         }
     }
 
     private record SubmitContextResponse(
+        String templateCode,
+        String language,
         String entryFunctionName,
         List<SubmitTestCaseResponse> testCases
     ) {}

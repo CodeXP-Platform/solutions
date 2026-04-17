@@ -10,6 +10,8 @@ public interface ChallengeContextGateway {
     SubmitChallengeContext fetchSubmitContext(ChallengeId challengeId, TemplateLanguage language);
 
     record SubmitChallengeContext(
+        String templateCode,
+        String language,
         String entryFunctionName,
         List<SubmitTestCase> testCases
     ) {}

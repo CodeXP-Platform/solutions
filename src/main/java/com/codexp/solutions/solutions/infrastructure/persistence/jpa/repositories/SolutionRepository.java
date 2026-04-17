@@ -8,7 +8,12 @@ import com.codexp.solutions.solutions.domain.model.Solution;
 import com.codexp.solutions.solutions.domain.model.valueobjects.AuthorId;
 import com.codexp.solutions.solutions.domain.model.valueobjects.ChallengeId;
 import com.codexp.solutions.solutions.domain.model.valueobjects.SolutionId;
+import com.codexp.solutions.solutions.domain.model.valueobjects.TemplateLanguage;
 
 public interface SolutionRepository extends JpaRepository<Solution, SolutionId> {
-    Optional<Solution> findByChallengeIdAndAuthorId(ChallengeId challengeId, AuthorId authorId);
+    Optional<Solution> findByChallengeIdAndAuthorIdAndLanguage(
+        ChallengeId challengeId,
+        AuthorId authorId,
+        TemplateLanguage language
+    );
 }

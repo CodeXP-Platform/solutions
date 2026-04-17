@@ -32,9 +32,18 @@ public class SolutionExecutionResultEventHandler {
         var solutionId = SolutionId.fromString(event.data().solutionId());
         var solution = solutionRepository.findById(solutionId).orElseThrow(SolutionNotFoundException::new);
 
+        if (event.data().executionId() == null || event.data().executionId().isBlank()) {
+            throw new IllegalArgumentException("Execution started event must include executionId");
+        }
+
         var attempt = attemptRepository
             .findFirstBySolutionIdAndStatusOrderByCreatedAtAsc(solutionId, AttemptStatus.QUEUED)
+            .or(() -> attemptRepository.findFirstBySolutionIdAndStatusOrderByCreatedAtAsc(solutionId, AttemptStatus.EXECUTING))
             .orElseThrow(() -> new IllegalArgumentException("No queued attempt found for started execution event."));
+
+        if (AttemptStatus.EXECUTING.equals(attempt.getStatus())) {
+            return;
+        }
 
         attempt.markExecuting();
         solution.markExecuting();
@@ -48,10 +57,20 @@ public class SolutionExecutionResultEventHandler {
         var solutionId = SolutionId.fromString(event.data().solutionId());
         var solution = solutionRepository.findById(solutionId).orElseThrow(SolutionNotFoundException::new);
 
+        if (event.data().executionId() == null || event.data().executionId().isBlank()) {
+            throw new IllegalArgumentException("Execution completed event must include executionId");
+        }
+
         var attempt = attemptRepository
             .findFirstBySolutionIdAndStatusOrderByCreatedAtAsc(solutionId, AttemptStatus.EXECUTING)
             .or(() -> attemptRepository.findFirstBySolutionIdAndStatusOrderByCreatedAtAsc(solutionId, AttemptStatus.QUEUED))
+            .or(() -> attemptRepository.findTopBySolutionIdAndStatusOrderByCreatedAtDesc(solutionId, AttemptStatus.PASSED))
+            .or(() -> attemptRepository.findTopBySolutionIdAndStatusOrderByCreatedAtDesc(solutionId, AttemptStatus.FAILED))
             .orElseThrow(() -> new IllegalArgumentException("No in-flight attempt found for completed execution event."));
+
+        if (AttemptStatus.PASSED.equals(attempt.getStatus()) || AttemptStatus.FAILED.equals(attempt.getStatus())) {
+            return;
+        }
 
         var failedTestIds = new ArrayList<String>();
         if (event.data().testResults() != null) {
@@ -64,7 +83,9 @@ public class SolutionExecutionResultEventHandler {
         boolean isSuccessful = Boolean.TRUE.equals(event.data().isSuccessful());
         attempt.markCompleted(
             isSuccessful,
-            event.data().totalExecutionTimeMs(),
+            event.data().totalExecutionTimeMs() == null
+                ? null
+                : event.data().totalExecutionTimeMs().longValue(),
             event.data().globalError(),
             failedTestIds
         );

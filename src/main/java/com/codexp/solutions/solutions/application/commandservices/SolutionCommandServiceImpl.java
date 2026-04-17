@@ -14,7 +14,7 @@ import com.codexp.solutions.solutions.domain.exceptions.ChallengeContextFetchExc
 import com.codexp.solutions.solutions.domain.exceptions.SolutionNotFoundException;
 import com.codexp.solutions.solutions.domain.exceptions.SolutionOwnershipException;
 import com.codexp.solutions.solutions.domain.model.Attempt;
-import com.codexp.solutions.solutions.domain.model.commands.CreateSolutionFromRequestedEventCommand;
+import com.codexp.solutions.solutions.domain.model.commands.CreateSolutionCommand;
 import com.codexp.solutions.solutions.domain.model.commands.SubmitSolutionCommand;
 import com.codexp.solutions.solutions.domain.model.commands.UpdateSolutionCodeCommand;
 import com.codexp.solutions.solutions.domain.model.events.SolutionExecutionRequestedEvent;
@@ -22,6 +22,7 @@ import com.codexp.solutions.solutions.domain.model.valueobjects.AttemptId;
 import com.codexp.solutions.solutions.domain.model.valueobjects.AttemptWindowMinutes;
 import com.codexp.solutions.solutions.domain.model.valueobjects.AttemptsLimit;
 import com.codexp.solutions.solutions.domain.model.valueobjects.AuthorId;
+import com.codexp.solutions.solutions.domain.model.valueobjects.SolutionCode;
 import com.codexp.solutions.solutions.domain.model.valueobjects.SolutionId;
 import com.codexp.solutions.solutions.domain.services.ChallengeContextGateway;
 import com.codexp.solutions.solutions.domain.services.SolutionCommandService;
@@ -59,8 +60,29 @@ public class SolutionCommandServiceImpl implements SolutionCommandService {
 
     @Override
     @Transactional
-    public Solution handle(CreateSolutionFromRequestedEventCommand command) {
-        var existing = solutionRepository.findByChallengeIdAndAuthorId(command.challengeId(), command.authorId());
+    public Solution handle(CreateSolutionCommand command) {
+        ensureAllowedRole(command.requesterRole());
+
+        var submitContext = challengeContextGateway.fetchSubmitContext(
+            command.challengeId(),
+            command.language()
+        );
+
+        if (
+            submitContext == null ||
+            submitContext.templateCode() == null ||
+            submitContext.templateCode().isBlank()
+        ) {
+            throw new ChallengeContextFetchException(
+                "Challenge submit context did not include template code."
+            );
+        }
+
+        var existing = solutionRepository.findByChallengeIdAndAuthorIdAndLanguage(
+            command.challengeId(),
+            command.requesterId(),
+            command.language()
+        );
         if (existing.isPresent()) {
             return existing.get();
         }
@@ -68,9 +90,9 @@ public class SolutionCommandServiceImpl implements SolutionCommandService {
         Solution solution = Solution.create(
             SolutionId.generate(),
             command.challengeId(),
-            command.authorId(),
+            command.requesterId(),
             command.language(),
-            command.templateCode(),
+            SolutionCode.fromString(submitContext.templateCode()),
             AttemptsLimit.fromInt(defaultMaxAttempts)
         );
 

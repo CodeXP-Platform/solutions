@@ -1,0 +1,49 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:solutions-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+eureka:
+  client:
+    enabled: false
+
+app:
+  jwt:
+    secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+  challenges:
+    base-url: http://localhost:8081
+    internal-token: test-internal-token
+  solutions:
+    default-max-attempts: 10
+    attempt-reset-window-minutes: 60
+  messaging:
+    challenges:
+      exchange: challenges.solutions.exchange
+    code-execution:
+      exchange: codeexecution.exchange
+    solutions:
+      queues:
+        solution-requested: solutions.solution.requested.queue
+        execution-started: solutions.execution.started.queue
+        execution-completed: solutions.execution.completed.queue
+      routing-keys:
+        solution-requested: challenges.solution.requested
+        execution-requested: challenges.solution.execution.requested
+        execution-started: codeexecution.solution.execution.started
+        execution-completed: codeexecution.solution.execution.completed

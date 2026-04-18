@@ -37,7 +37,7 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:mysecretkey}
+    secret: ${JWT_SECRET:8x/c+pXQ3Q9m+9b2tZ/vT1gQzYqXlO/m+HwA9R5z7J8=}
   challenges:
     base-url: ${CHALLENGES_BASE_URL:http://localhost:8081}
     internal-token: ${CHALLENGES_INTERNAL_TOKEN:changeme-internal-token}

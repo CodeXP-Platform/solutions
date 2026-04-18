@@ -37,7 +37,28 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:mysecretkey}
+    secret: ${JWT_SECRET:8x/c+pXQ3Q9m+9b2tZ/vT1gQzYqXlO/m+HwA9R5z7J8=}
+  challenges:
+    base-url: ${CHALLENGES_BASE_URL:http://localhost:8081}
+    internal-token: ${CHALLENGES_INTERNAL_TOKEN:changeme-internal-token}
+  messaging:
+    challenges:
+      exchange: ${CHALLENGES_EXCHANGE:challenges.solutions.exchange}
+    code-execution:
+      exchange: ${CODE_EXECUTION_EXCHANGE:codeexecution.exchange}
+    solutions:
+      queues:
+        solution-requested: ${SOLUTIONS_QUEUE_SOLUTION_REQUESTED:solutions.solution.requested.queue}
+        execution-started: ${SOLUTIONS_QUEUE_EXECUTION_STARTED:solutions.execution.started.queue}
+        execution-completed: ${SOLUTIONS_QUEUE_EXECUTION_COMPLETED:solutions.execution.completed.queue}
+      routing-keys:
+        solution-requested: ${SOLUTIONS_ROUTING_KEY_SOLUTION_REQUESTED:challenges.solution.requested}
+        execution-requested: ${SOLUTIONS_ROUTING_KEY_EXECUTION_REQUESTED:challenges.solution.execution.requested}
+        execution-started: ${SOLUTIONS_ROUTING_KEY_EXECUTION_STARTED:codeexecution.solution.execution.started}
+        execution-completed: ${SOLUTIONS_ROUTING_KEY_EXECUTION_COMPLETED:codeexecution.solution.execution.completed}
+  solutions:
+    default-max-attempts: ${SOLUTIONS_DEFAULT_MAX_ATTEMPTS:10}
+    attempt-reset-window-minutes: ${SOLUTIONS_ATTEMPT_RESET_WINDOW_MINUTES:60}
 
 # Eureka Config
 eureka:

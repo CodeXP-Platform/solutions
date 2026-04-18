@@ -2,6 +2,7 @@ package com.codexp.solutions.shared.infrastructure.security;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -12,9 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.codexp.solutions.shared.domain.model.valueobjects.JwtPrincipal;
-import com.codexp.solutions.shared.domain.model.valueobjects.UserRole;
 
-import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,37 +34,28 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        String jwt = resolveBearerToken(request);
+        if (jwt == null) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        final String jwt = authHeader.substring(7);
-
-        if (!jwtUtils.isTokenValid(jwt)) {
+        Optional<JwtPrincipal> principal = jwtUtils.extractPrincipal(jwt);
+        if (principal.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
-            Claims claims = jwtUtils.extractAllClaims(jwt);
-
-            String userId   = claims.getSubject();
-            String nickname = claims.get("nickname", String.class);
-            String email    = claims.get("email", String.class);
-            String role     = claims.get("role", String.class);
+            JwtPrincipal jwtPrincipal = principal.get();
 
             List<GrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ROLE_" + role)
+                new SimpleGrantedAuthority(jwtPrincipal.role().asAuthority())
             );
-
-            JwtPrincipal principal = new JwtPrincipal(userId, nickname, email, UserRole.valueOf(role));
 
             UsernamePasswordAuthenticationToken authToken =
                     new UsernamePasswordAuthenticationToken(
-                            principal,
+                            jwtPrincipal,
                             null,
                             authorities
                     );
@@ -75,5 +65,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private String resolveBearerToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        String prefix = "Bearer ";
+
+        if (authHeader == null || !authHeader.startsWith(prefix)) {
+            return null;
+        }
+
+        return authHeader.substring(prefix.length());
     }
 }

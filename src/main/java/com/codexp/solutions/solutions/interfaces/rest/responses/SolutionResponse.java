@@ -1,7 +1,6 @@
 package com.codexp.solutions.solutions.interfaces.rest.responses;
 
 import java.time.Instant;
-import java.util.List;
 
 public record SolutionResponse(
     String solutionId,
@@ -14,9 +13,6 @@ public record SolutionResponse(
     int currentAttempts,
     int remainingAttempts,
     Instant attemptsResetAt,
-    Long executionTimeMs,
-    String errorDetails,
-    List<String> failedTestIds,
     Instant updatedAt,
     Instant createdAt
 ) {}

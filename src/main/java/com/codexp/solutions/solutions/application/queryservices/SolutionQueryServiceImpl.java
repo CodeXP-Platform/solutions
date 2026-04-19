@@ -1,7 +1,5 @@
 package com.codexp.solutions.solutions.application.queryservices;
 
-import org.springframework.stereotype.Service;
-
 import com.codexp.solutions.shared.domain.exceptions.UnauthorizedActionException;
 import com.codexp.solutions.shared.domain.model.valueobjects.UserRole;
 import com.codexp.solutions.solutions.domain.exceptions.SolutionNotFoundException;
@@ -9,8 +7,11 @@ import com.codexp.solutions.solutions.domain.exceptions.SolutionOwnershipExcepti
 import com.codexp.solutions.solutions.domain.model.Solution;
 import com.codexp.solutions.solutions.domain.model.queries.GetSolutionByChallengeQuery;
 import com.codexp.solutions.solutions.domain.model.queries.GetSolutionByIdQuery;
+import com.codexp.solutions.solutions.domain.model.queries.GetSolutionsByChallengeQuery;
 import com.codexp.solutions.solutions.domain.services.SolutionQueryService;
 import com.codexp.solutions.solutions.infrastructure.persistence.jpa.repositories.SolutionRepository;
+import java.util.List;
+import org.springframework.stereotype.Service;
 
 @Service
 public class SolutionQueryServiceImpl implements SolutionQueryService {
@@ -25,10 +26,17 @@ public class SolutionQueryServiceImpl implements SolutionQueryService {
     public Solution handle(GetSolutionByIdQuery query) {
         ensureAllowedRole(query.requesterRole());
 
-        Solution solution = solutionRepository.findById(query.solutionId()).orElseThrow(SolutionNotFoundException::new);
+        Solution solution = solutionRepository
+            .findById(query.solutionId())
+            .orElseThrow(SolutionNotFoundException::new);
 
-        if (!UserRole.ROLE_ADMIN.equals(query.requesterRole()) && !solution.isOwnedBy(query.requesterId())) {
-            throw new SolutionOwnershipException("Only the solution owner or admin can access this solution.");
+        if (
+            !UserRole.ROLE_ADMIN.equals(query.requesterRole()) &&
+            !solution.isOwnedBy(query.requesterId())
+        ) {
+            throw new SolutionOwnershipException(
+                "Only the solution owner or admin can access this solution."
+            );
         }
 
         return solution;
@@ -47,9 +55,24 @@ public class SolutionQueryServiceImpl implements SolutionQueryService {
             .orElseThrow(SolutionNotFoundException::new);
     }
 
+    @Override
+    public List<Solution> handle(GetSolutionsByChallengeQuery query) {
+        ensureAllowedRole(query.requesterRole());
+
+        return solutionRepository.findAllByChallengeIdAndAuthorId(
+            query.challengeId(),
+            query.requesterId()
+        );
+    }
+
     private void ensureAllowedRole(UserRole role) {
-        if (!UserRole.ROLE_STUDENT.equals(role) && !UserRole.ROLE_ADMIN.equals(role)) {
-            throw new UnauthorizedActionException("Only students or admins can access solutions");
+        if (
+            !UserRole.ROLE_STUDENT.equals(role) &&
+            !UserRole.ROLE_ADMIN.equals(role)
+        ) {
+            throw new UnauthorizedActionException(
+                "Only students or admins can access solutions"
+            );
         }
     }
 }

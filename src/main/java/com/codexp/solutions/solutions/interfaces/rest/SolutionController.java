@@ -1,7 +1,6 @@
 package com.codexp.solutions.solutions.interfaces.rest;
 
 import com.codexp.solutions.shared.application.UserContext;
-import com.codexp.solutions.solutions.domain.model.queries.GetLatestAttemptBySolutionIdQuery;
 import com.codexp.solutions.solutions.domain.services.AttemptQueryService;
 import com.codexp.solutions.solutions.domain.services.SolutionCommandService;
 import com.codexp.solutions.solutions.domain.services.SolutionQueryService;
@@ -67,12 +66,9 @@ public class SolutionController {
                 request.language()
             );
         var solution = solutionQueryService.handle(query);
-        var latestAttempt = attemptQueryService
-            .handle(new GetLatestAttemptBySolutionIdQuery(solution.getId()))
-            .orElse(null);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
-            SolutionAssembler.toResponse(solution, latestAttempt)
+            SolutionAssembler.toResponse(solution)
         );
     }
 
@@ -93,14 +89,7 @@ public class SolutionController {
 
         var responses = solutions
             .stream()
-            .map(solution -> {
-                var latestAttempt = attemptQueryService
-                    .handle(
-                        new GetLatestAttemptBySolutionIdQuery(solution.getId())
-                    )
-                    .orElse(null);
-                return SolutionAssembler.toResponse(solution, latestAttempt);
-            })
+            .map(SolutionAssembler::toResponse)
             .toList();
 
         return ResponseEntity.ok(responses);
@@ -116,13 +105,8 @@ public class SolutionController {
             jwt.role()
         );
         var solution = solutionQueryService.handle(query);
-        var latestAttempt = attemptQueryService
-            .handle(new GetLatestAttemptBySolutionIdQuery(solution.getId()))
-            .orElse(null);
 
-        return ResponseEntity.ok(
-            SolutionAssembler.toResponse(solution, latestAttempt)
-        );
+        return ResponseEntity.ok(SolutionAssembler.toResponse(solution));
     }
 
     @PutMapping("/{id}")
@@ -140,13 +124,8 @@ public class SolutionController {
         );
 
         var solution = solutionCommandService.handle(command);
-        var latestAttempt = attemptQueryService
-            .handle(new GetLatestAttemptBySolutionIdQuery(solution.getId()))
-            .orElse(null);
 
-        return ResponseEntity.ok(
-            SolutionAssembler.toResponse(solution, latestAttempt)
-        );
+        return ResponseEntity.ok(SolutionAssembler.toResponse(solution));
     }
 
     @PostMapping("/{id}/submit")

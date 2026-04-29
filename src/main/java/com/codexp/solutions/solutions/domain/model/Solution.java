@@ -123,42 +123,6 @@ public class Solution extends AbstractEntity {
         return solution;
     }
 
-    public SolutionId getId() {
-        return id;
-    }
-
-    public ChallengeId getChallengeId() {
-        return challengeId;
-    }
-
-    public AuthorId getAuthorId() {
-        return authorId;
-    }
-
-    public TemplateLanguage getLanguage() {
-        return language;
-    }
-
-    public SolutionCode getCode() {
-        return code;
-    }
-
-    public SolutionStatus getStatus() {
-        return status;
-    }
-
-    public AttemptsLimit getMaxAttempts() {
-        return maxAttempts;
-    }
-
-    public AttemptsCount getCurrentAttempts() {
-        return currentAttempts;
-    }
-
-    public Instant getAttemptsResetAt() {
-        return attemptsResetAt;
-    }
-
     public void updateCode(SolutionCode code) {
         this.code = code;
     }

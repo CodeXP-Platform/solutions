@@ -4,15 +4,10 @@ import com.codexp.solutions.solutions.domain.model.Attempt;
 import com.codexp.solutions.solutions.domain.model.Solution;
 import com.codexp.solutions.solutions.interfaces.rest.responses.SolutionResponse;
 import com.codexp.solutions.solutions.interfaces.rest.responses.SubmitSolutionResponse;
-import java.util.Collections;
-import java.util.List;
 
 public class SolutionAssembler {
 
-    public static SolutionResponse toResponse(
-        Solution solution,
-        Attempt latestAttempt
-    ) {
+    public static SolutionResponse toResponse(Solution solution) {
         return new SolutionResponse(
             solution.getId().toString(),
             solution.getChallengeId().toString(),

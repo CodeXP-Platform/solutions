@@ -1,5 +1,6 @@
 package com.codexp.solutions.solutions.infrastructure.persistence.jpa.repositories;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,4 +22,6 @@ public interface AttemptRepository extends JpaRepository<Attempt, AttemptId> {
         SolutionId solutionId,
         AttemptStatus status
     );
+
+    List<Attempt> findAllBySolutionIdOrderByCreatedAtDesc(SolutionId solutionId);
 }

@@ -11,10 +11,11 @@ public record SolutionExecutionCompletedEvent(
 ) {
     public record Data(
         String solutionId,
+        String executionId,
+        String attemptId,
         String challengeId,
         String userId,
         String code,
-        String executionId,
         Boolean isSuccessful,
         Long totalExecutionTimeMs,
         String globalError,

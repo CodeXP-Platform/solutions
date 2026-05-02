@@ -318,4 +318,24 @@ Para escalar esto a multiples microservicios:
 - Publicar una plantilla interna de bounded context con esta estructura de carpetas
 - Automatizar validaciones arquitectonicas en CI (package boundaries, naming y convenciones)
 
-Con esta base, el equipo puede replicar implementaciones consistentes de dominio sin perder reglas de negocio ni estandar de seguridad/error handling entre microservicios.
+## 16. Eventos de dominio inter-microservicios
+
+### 16.1 `SolutionExecutionRequestedEvent`
+
+Este evento se emite cuando un usuario envia (submits) una solucion para su ejecucion. El broker lo transportara al microservicio de execution/runner correspondiente. 
+
+**Payload del evento (Data):**
+- `solutionId`: UUID de la solucion.
+- `attemptId`: UUID del intento de ejecucion (creado en status QUEUED antes de la emision).
+- `challengeId`: UUID del challenge.
+- `userId`: UUID del autor.
+- `language`: lenguaje de programacion (ej. python, java).
+- `entryFunctionName`: nombre de la funcion principal a ejecutar.
+- `code`: el codigo enviado por el usuario.
+- `testCases`: lista de test cases a evaluar contra el codigo.
+  - `testId`: identificador del test case
+  - `input`: argumentos de entrada
+  - `expectedOutput`: salida esperada
+  - `isHidden`: flag que indica si es oculto o publico
+
+Nota importante: El `attemptId` debe usarse como llave primaria u orientativa al momento de procesar la respuesta asincrona de ejecucion para actualizar el status de ese intento especifico.

@@ -12,6 +12,7 @@ public record SolutionExecutionRequestedEvent(
 ) {
     public static SolutionExecutionRequestedEvent create(
         String solutionId,
+        String attemptId,
         String challengeId,
         String userId,
         String language,
@@ -25,6 +26,7 @@ public record SolutionExecutionRequestedEvent(
             Instant.now(),
             new Data(
                 solutionId,
+                attemptId,
                 challengeId,
                 userId,
                 language,
@@ -37,6 +39,7 @@ public record SolutionExecutionRequestedEvent(
 
     public record Data(
         String solutionId,
+        String attemptId,
         String challengeId,
         String userId,
         String language,

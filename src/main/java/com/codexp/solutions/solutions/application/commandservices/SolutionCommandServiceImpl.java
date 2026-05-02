@@ -201,6 +201,7 @@ public class SolutionCommandServiceImpl implements SolutionCommandService {
         SolutionExecutionRequestedEvent event =
             SolutionExecutionRequestedEvent.create(
                 saved.getId().toString(),
+                queuedAttempt.getId().toString(),
                 saved.getChallengeId().toString(),
                 saved.getAuthorId().toString(),
                 saved.getLanguage().toString(),

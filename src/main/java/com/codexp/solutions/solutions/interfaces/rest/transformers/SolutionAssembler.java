@@ -11,6 +11,7 @@ public class SolutionAssembler {
         return new SolutionResponse(
             solution.getId().toString(),
             solution.getChallengeId().toString(),
+            solution.getCodeTemplateId().toString(),
             solution.getAuthorId().toString(),
             solution.getLanguage().toString(),
             solution.getCode().toString(),

@@ -162,9 +162,9 @@ public class SolutionController {
             jwt.role()
         );
 
-        var solution = solutionCommandService.handle(command);
+        var result = solutionCommandService.handle(command);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(
-            SolutionAssembler.toSubmitResponse(solution)
+            SolutionAssembler.toSubmitResponse(result)
         );
     }
 }

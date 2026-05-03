@@ -2,6 +2,7 @@ package com.codexp.solutions.solutions.interfaces.rest.transformers;
 
 import com.codexp.solutions.solutions.domain.model.Attempt;
 import com.codexp.solutions.solutions.domain.model.Solution;
+import com.codexp.solutions.solutions.domain.model.commands.SubmitSolutionResult;
 import com.codexp.solutions.solutions.interfaces.rest.responses.SolutionResponse;
 import com.codexp.solutions.solutions.interfaces.rest.responses.SubmitSolutionResponse;
 
@@ -25,9 +26,11 @@ public class SolutionAssembler {
         );
     }
 
-    public static SubmitSolutionResponse toSubmitResponse(Solution solution) {
+    public static SubmitSolutionResponse toSubmitResponse(SubmitSolutionResult result) {
+        var solution = result.solution();
         return new SubmitSolutionResponse(
             solution.getId().toString(),
+            result.attemptId().toString(),
             solution.getStatus().name(),
             solution.getCurrentAttempts().value(),
             solution.getMaxAttempts().value(),

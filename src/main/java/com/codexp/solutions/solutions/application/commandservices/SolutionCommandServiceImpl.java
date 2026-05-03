@@ -9,6 +9,7 @@ import com.codexp.solutions.solutions.domain.model.Attempt;
 import com.codexp.solutions.solutions.domain.model.Solution;
 import com.codexp.solutions.solutions.domain.model.commands.CreateSolutionCommand;
 import com.codexp.solutions.solutions.domain.model.commands.SubmitSolutionCommand;
+import com.codexp.solutions.solutions.domain.model.commands.SubmitSolutionResult;
 import com.codexp.solutions.solutions.domain.model.commands.UpdateSolutionCodeCommand;
 import com.codexp.solutions.solutions.domain.model.events.SolutionExecutionRequestedEvent;
 import com.codexp.solutions.solutions.domain.model.valueobjects.AttemptId;
@@ -118,7 +119,7 @@ public class SolutionCommandServiceImpl implements SolutionCommandService {
 
     @Override
     @Transactional
-    public Solution handle(SubmitSolutionCommand command) {
+    public SubmitSolutionResult handle(SubmitSolutionCommand command) {
         ensureAllowedRole(command.requesterRole());
 
         Solution solution = solutionRepository
@@ -212,7 +213,7 @@ public class SolutionCommandServiceImpl implements SolutionCommandService {
 
         solutionExecutionEventPublisher.publish(event);
 
-        return saved;
+        return new SubmitSolutionResult(saved, queuedAttempt.getId());
     }
 
     private void validateTestInput(String input) {

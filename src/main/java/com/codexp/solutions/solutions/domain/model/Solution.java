@@ -2,15 +2,7 @@ package com.codexp.solutions.solutions.domain.model;
 
 import com.codexp.solutions.shared.domain.model.AbstractEntity;
 import com.codexp.solutions.solutions.domain.exceptions.AttemptsLimitReachedException;
-import com.codexp.solutions.solutions.domain.model.valueobjects.AttemptWindowMinutes;
-import com.codexp.solutions.solutions.domain.model.valueobjects.AttemptsCount;
-import com.codexp.solutions.solutions.domain.model.valueobjects.AttemptsLimit;
-import com.codexp.solutions.solutions.domain.model.valueobjects.AuthorId;
-import com.codexp.solutions.solutions.domain.model.valueobjects.ChallengeId;
-import com.codexp.solutions.solutions.domain.model.valueobjects.SolutionCode;
-import com.codexp.solutions.solutions.domain.model.valueobjects.SolutionId;
-import com.codexp.solutions.solutions.domain.model.valueobjects.SolutionStatus;
-import com.codexp.solutions.solutions.domain.model.valueobjects.TemplateLanguage;
+import com.codexp.solutions.solutions.domain.model.valueobjects.*;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -55,6 +47,13 @@ public class Solution extends AbstractEntity {
         column = @Column(name = "challenge_id", nullable = false)
     )
     private ChallengeId challengeId;
+
+    @Embedded
+    @AttributeOverride(
+        name = "value",
+        column = @Column(name = "code_template_id", nullable = false)
+    )
+    private CodeTemplateId codeTemplateId;
 
     @Embedded
     @AttributeOverride(
@@ -105,6 +104,7 @@ public class Solution extends AbstractEntity {
     public static Solution create(
         SolutionId id,
         ChallengeId challengeId,
+        com.codexp.solutions.solutions.domain.model.valueobjects.CodeTemplateId codeTemplateId,
         AuthorId authorId,
         TemplateLanguage language,
         SolutionCode code,
@@ -113,6 +113,7 @@ public class Solution extends AbstractEntity {
         Solution solution = new Solution();
         solution.id = id;
         solution.challengeId = challengeId;
+        solution.codeTemplateId = codeTemplateId;
         solution.authorId = authorId;
         solution.language = language;
         solution.code = code;

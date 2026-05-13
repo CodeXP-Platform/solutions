@@ -5,6 +5,7 @@ import java.time.Instant;
 public record SolutionResponse(
     String solutionId,
     String challengeId,
+    String codeTemplateId,
     String authorId,
     String language,
     String code,

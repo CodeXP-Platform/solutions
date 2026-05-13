@@ -4,6 +4,7 @@ import java.time.Instant;
 
 public record SubmitSolutionResponse(
     String solutionId,
+    String attemptId,
     String status,
     int currentAttempts,
     int maxAttempts,

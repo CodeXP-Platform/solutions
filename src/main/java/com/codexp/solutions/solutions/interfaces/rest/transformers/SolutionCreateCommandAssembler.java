@@ -4,6 +4,7 @@ import com.codexp.solutions.shared.domain.model.valueobjects.UserRole;
 import com.codexp.solutions.solutions.domain.model.commands.CreateSolutionCommand;
 import com.codexp.solutions.solutions.domain.model.valueobjects.AuthorId;
 import com.codexp.solutions.solutions.domain.model.valueobjects.ChallengeId;
+import com.codexp.solutions.solutions.domain.model.valueobjects.CodeTemplateId;
 import com.codexp.solutions.solutions.domain.model.valueobjects.TemplateLanguage;
 import com.codexp.solutions.solutions.interfaces.rest.requests.CreateSolutionRequest;
 
@@ -16,6 +17,7 @@ public class SolutionCreateCommandAssembler {
     ) {
         return new CreateSolutionCommand(
             ChallengeId.fromString(request.challengeId()),
+            CodeTemplateId.fromString(request.codeTemplateId()),
             AuthorId.fromString(requesterId),
             requesterRole,
             TemplateLanguage.fromString(request.language())

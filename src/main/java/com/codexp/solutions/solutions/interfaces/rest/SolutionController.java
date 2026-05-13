@@ -6,8 +6,11 @@ import com.codexp.solutions.solutions.domain.services.SolutionCommandService;
 import com.codexp.solutions.solutions.domain.services.SolutionQueryService;
 import com.codexp.solutions.solutions.interfaces.rest.requests.CreateSolutionRequest;
 import com.codexp.solutions.solutions.interfaces.rest.requests.UpdateSolutionCodeRequest;
+import com.codexp.solutions.solutions.interfaces.rest.responses.AttemptResponse;
 import com.codexp.solutions.solutions.interfaces.rest.responses.SolutionResponse;
 import com.codexp.solutions.solutions.interfaces.rest.responses.SubmitSolutionResponse;
+import com.codexp.solutions.solutions.interfaces.rest.transformers.AttemptAssembler;
+import com.codexp.solutions.solutions.interfaces.rest.transformers.AttemptQueryAssembler;
 import com.codexp.solutions.solutions.interfaces.rest.transformers.SolutionAssembler;
 import com.codexp.solutions.solutions.interfaces.rest.transformers.SolutionChallengeQueryAssembler;
 import com.codexp.solutions.solutions.interfaces.rest.transformers.SolutionCommandAssembler;
@@ -109,6 +112,25 @@ public class SolutionController {
         return ResponseEntity.ok(SolutionAssembler.toResponse(solution));
     }
 
+    @GetMapping("/{id}/attempts")
+    public ResponseEntity<List<AttemptResponse>> getAttemptsBySolutionId(@PathVariable String id) {
+        var jwt = userContext.getPrincipal();
+
+        var query = AttemptQueryAssembler.toGetAttemptsBySolutionIdQuery(
+            id,
+            jwt.userId().value(),
+            jwt.role()
+        );
+        
+        var attempts = attemptQueryService.handle(query);
+
+        var responses = attempts.stream()
+            .map(AttemptAssembler::toResponse)
+            .toList();
+
+        return ResponseEntity.ok(responses);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<SolutionResponse> updateCode(
         @PathVariable String id,
@@ -140,9 +162,9 @@ public class SolutionController {
             jwt.role()
         );
 
-        var solution = solutionCommandService.handle(command);
+        var result = solutionCommandService.handle(command);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(
-            SolutionAssembler.toSubmitResponse(solution)
+            SolutionAssembler.toSubmitResponse(result)
         );
     }
 }
